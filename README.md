@@ -1,5 +1,4 @@
-# Miori
-
+# albo
 **TODO: Add description**
 
 ## Installation
@@ -10,7 +9,7 @@ by adding `miori` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:miori, "~> 0.1.0"}
+    {:albo, "~> 0.1.0"}
   ]
 end
 ```

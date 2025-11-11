@@ -28,9 +28,11 @@ end
 # Configure Nostrum at runtime so it can start the consumer process before shards attempt to connect.
 # System.fetch_env!/1 will raise early if the token is missing - fails fast
 config :nostrum,
+  application_id: System.fetch_env!("DISCORD_APP_ID"),
   token: System.fetch_env!("DISCORD_BOT_TOKEN"),
   consumer: Miori.Consumer,
   intents: [
+    # : is an atom and are constants where their name is their value
     :guild_messages,
     :guild_users,
     :direct_messages,
