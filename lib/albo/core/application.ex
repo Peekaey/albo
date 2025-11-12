@@ -14,7 +14,8 @@ defmodule Albo.Application do
       # is available immediately when shards attempt to connect.
       # Consumer process is the DiscordBot itself
       {Albo.Consumer, []},
-      {Albo.CommandRegistrar, []}
+      {Albo.CommandRegistrar, []},
+      {Albo.Utils.Scheduler, []}
     ]
 
     # Name the supervisor so it can be referenced elsewhere in the app.

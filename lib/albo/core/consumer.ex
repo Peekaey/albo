@@ -5,9 +5,9 @@ defmodule Albo.Consumer do
   """
 
   use Nostrum.Consumer
-  alias Nostrum.Api
+
   alias Albo.CommandRegistry
-  import Logger
+
 
   @impl true
   def handle_event({:INTERACTION_CREATE, interaction, _ws_state}) do
@@ -26,14 +26,14 @@ defmodule Albo.Consumer do
           {:reply, response_map} ->
             id = Map.get(interaction, "id", Map.get(interaction, :id))
             token = Map.get(interaction, "token", Map.get(interaction, :token))
-            Api.create_interaction_response(id, token, response_map)
+            Nostrum.Api.Interaction.create_response(id, token, response_map)
             :ok
 
           {:defer_and_followup, fun} when is_function(fun, 0) ->
             id = Map.get(interaction, "id", Map.get(interaction, :id))
             token = Map.get(interaction, "token", Map.get(interaction, :token))
             # send deferred response
-            Api.create_interaction_response(id, token, %{type: 5})
+            Nostrum.Api.Interaction.create_response(id, token, %{type: 5})
             # run long work and send follow-up
             Task.start(fn ->
               result = fun.()
@@ -41,14 +41,11 @@ defmodule Albo.Consumer do
 
               case result do
                 {content, files} when is_list(files) ->
-                  # Nostrum 0.10.4 DOES support files in follow-ups!
-                  Nostrum.Api.create_followup_message(app_id, token, %{
-                    content: content,
-                    files: files
-                  })
+                  # Try to call Interaction.create_followup_message if available
+                  Nostrum.Api.Interaction.create_followup_message(app_id, token, %{content: content})
 
                 content when is_binary(content) ->
-                  Nostrum.Api.create_followup_message(app_id, token, %{content: content})
+                  Nostrum.Api.Interaction.create_followup_message(app_id, token, %{content: content})
               end
             end)
 

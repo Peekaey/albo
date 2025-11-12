@@ -26,3 +26,5 @@ miori-*.tar
 .env
 
 .idea/
+
+.DS_Store

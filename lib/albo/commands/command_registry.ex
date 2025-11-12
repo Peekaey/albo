@@ -1,7 +1,8 @@
 defmodule Albo.CommandRegistry do
   @commands [
     Albo.Commands.Ping,
-    Albo.Commands.RemindToDisconnect
+    Albo.Commands.RemindUserToDisconnect,
+    Albo.Commands.RemindEveryoneToDisconnect
   ]
 
   def commands, do: @commands

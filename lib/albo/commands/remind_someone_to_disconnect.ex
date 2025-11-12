@@ -1,15 +1,10 @@
-defmodule Albo.Commands.RemindToDisconnect do
+defmodule Albo.Commands.RemindUserToDisconnect do
   @behaviour Albo.Command
 
   @impl true
-  def name, do: "remind_to_disconnect"
+  def name, do: "remind_someone_to_disconnect"
 
   @impl true
-  @spec register_payload() :: %{
-          description: <<_::360>>,
-          name: <<_::160>>,
-          options: [%{description: <<_::296>>, name: <<_::40>>, required: true, type: 6}, ...]
-        }
   def register_payload do
     %{
       name: name(),
@@ -41,20 +36,22 @@ defmodule Albo.Commands.RemindToDisconnect do
         _ -> nil
       end)
 
-      content = "<@#{user_id}> — The right to disconnect is now law. Because if you're not being paid 24 hours a day, you shouldn't be on call 24 hours a day"
+    content = "<@#{user_id}> — The right to disconnect is now law. Because if you're not being paid 24 hours a day, you shouldn't be on call 24 hours a day"
 
-  response = %{
-    type: 4, 
-    data: %{
-      content: content,
-      files: [
-        %{
-          name: "albo1.mov",
-          body: File.read!("./assets/albo1.mov")
-        }
-      ]
+    file_to_send = Albo.Utils.Helpers.get_right_to_disconnect_video()
+
+    response = %{
+      type: 4,
+      data: %{
+        content: content,
+        files: [
+          %{
+            name: file_to_send.name,
+            body: file_to_send.body
+          }
+        ]
+      }
     }
-  }
 
   {:reply, response}
 

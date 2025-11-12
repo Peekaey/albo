@@ -29,6 +29,7 @@ end
 # System.fetch_env!/1 will raise early if the token is missing - fails fast
 config :nostrum,
   application_id: System.fetch_env!("DISCORD_APP_ID"),
+  channel_id: System.fetch_env!("DISCORD_CHANNEL_ID"),
   token: System.fetch_env!("DISCORD_BOT_TOKEN"),
   consumer: Miori.Consumer,
   intents: [
