@@ -28,8 +28,11 @@ RUN apk add --no-cache openssl ncurses-libs libstdc++ libgcc
 
 WORKDIR /app
 
-# Copy only the release
+# Copy the release
 COPY --from=build /app/_build/prod/rel/albo ./
+
+# Copy assets folder so that the bot can post videos
+COPY --from=build /app/assets ./assets
 
 ENV MIX_ENV=prod
 
