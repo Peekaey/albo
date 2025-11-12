@@ -14,7 +14,7 @@ Self hostable discord bot that reminds members of a guild about the right to dis
 ![example](/images/example.png)
 
 ## Features
-- Automated alerts at 5PM AEST that reminds members about the right to disconnect.
+- Automated alerts at 5PM AEST weekdays that reminds members about the right to disconnect.
 - Slash commands that ping specific members with   
     - a reminder about the right to disconnect
     - check in to see if they have disconnected for the day
@@ -34,7 +34,6 @@ Parameter requirements (see .env.example)
 3.  ```mix run``` or ```iex -S mix``` to run
 
 #### Building for docker
-- ```docker build -t albo:latest .```
+- ```docker build -t albo:latest .```     
 
-    
 Made with Elixir & Nostrum
