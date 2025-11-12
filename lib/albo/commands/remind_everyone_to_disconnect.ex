@@ -15,7 +15,7 @@ defmodule Albo.Commands.RemindEveryoneToDisconnect do
 
   @impl true
   def handle_interaction(interaction) do
-    data = Map.get(interaction, "data", Map.get(interaction, :data, %{}))
+    _data = Map.get(interaction, "data", Map.get(interaction, :data, %{}))
 
     content = "@everyone — Just a reminder that the right to disconnect is now law. Because if you're not being paid 24 hours a day, you shouldn't be on call 24 hours a day"
 

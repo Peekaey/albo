@@ -15,7 +15,7 @@ defmodule Albo.Commands.Ping do
 
   @impl true
 
-  def handle_interaction(interaction) do
+  def handle_interaction(_interaction) do
     {:reply, %{type: 4, data: %{content: "pong!"}}}
   end
 end
