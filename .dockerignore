@@ -1,0 +1,10 @@
+_build/
+deps/
+.git/
+.gitignore
+*.md
+test/
+.elixir_ls/
+.vscode/
+*.log
+erl_crash.dump

@@ -7,7 +7,13 @@ defmodule Albo.MixProject do
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      releases: [
+        albo: [
+          include_executables_for: [:unix],
+          applications: [runtime_tools: :permanent]
+        ]
+      ]
     ]
   end
 
