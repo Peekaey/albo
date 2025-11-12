@@ -34,6 +34,7 @@ Parameter requirements (see .env.example)
 3.  ```mix run``` or ```iex -S mix``` to run
 
 #### Building for docker
-- ```docker build -t albo:latest .```     
+- ```docker build -t albo:latest .```
+- Sample Run ```docker run -e DISCORD_BOT_TOKEN= -e DISCORD_APP_ID= -e DISCORD_GUILD_ID= -e DISCORD_CHANNEL_ID= --name albo-bot albo```
 
 Made with Elixir & Nostrum
