@@ -34,7 +34,9 @@ Parameter requirements (see .env.example)
 3.  ```mix run``` or ```iex -S mix``` to run
 
 #### Building for docker
-- ```docker build -t albo:latest .```
+1.  ```docker build -t albo:latest .```
 - Sample Run ```docker run -e DISCORD_BOT_TOKEN= -e DISCORD_APP_ID= -e DISCORD_GUILD_ID= -e DISCORD_CHANNEL_ID= --name albo-bot albo```
+- Can also pull the latest image directly via ```ghcr.io/peekaey/albo:latest```
+
 
 Made with Elixir & Nostrum
