@@ -14,6 +14,22 @@ defmodule Albo.Utils.Helpers do
         name: "albo2.mov",
         body: File.read!("./assets/albo2.mov")
       }
+      3 -> %{
+        name: "albo3.mov",
+        body: File.read!("./assets/albo3.mov")
+      }
+      4 -> %{
+        name: "albo4.mov",
+        body: File.read!("./assets/albo4.mov")
+      }
+      5 -> %{
+        name: "albo5.mov",
+        body: File.read!("./assets/albo5.mov")
+      }
+      6 -> %{
+        name: "albo6.mov",
+        body: File.read!("./assets/albo6.mov")
+      }
     end
   end
 
