@@ -3,7 +3,7 @@ defmodule Albo.Utils.Helpers do
 
 
   def get_right_to_disconnect_video() do
-    choice = Enum.random(1..2)
+    choice = Enum.random(1..6)
 
     case choice do
       1 -> %{
