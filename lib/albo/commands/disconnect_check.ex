@@ -1,6 +1,8 @@
 defmodule Albo.Commands.DisconnectCheck do
   @behaviour Albo.Command
 
+  require Logger
+
   @impl true
   def name, do: "disconnect_check"
 
@@ -33,24 +35,33 @@ defmodule Albo.Commands.DisconnectCheck do
         %{name: "wagie", value: v } -> v
         _ -> nil
       end)
-    content = "<@#{user_id}> — Have you disconnected today? If not, please do so now"
 
-    file_to_send = Albo.Utils.Helpers.get_right_to_disconnect_video()
+    Task.start(fn ->
+      Process.sleep(100)
 
-    response = %{
-      type: 4,
-      data: %{
-        content: content,
-        files: [
-          %{
-            name: file_to_send.name,
-            body: file_to_send.body
-          }
-        ]
-      }
-    }
+      content = "<@#{user_id}> — Have you disconnected today? If not, please do so now"
 
-    {:reply, response}
-    
+      token = Map.get(interaction, "token", Map.get(interaction, :token))
+
+      case Albo.Utils.Helpers.get_right_to_disconnect_video() do
+        nil ->
+          Logger.error("Failed to get right to disconnect video")
+          case Nostrum.Api.Interaction.create_followup_message(token, %{content: "#{content}\n\n_(Video unavailable)_"}) do
+            {:ok, _} -> Logger.info("Sent error message to user #{user_id}")
+            {:error, reason} ->
+              Logger.error("Failed to send error message: #{inspect(reason)}")
+          end
+
+        file ->
+          case Nostrum.Api.Interaction.create_followup_message(token, %{content: content, files: [file]}) do
+            {:ok, _} -> Logger.info("Disconnect check sent to user #{user_id}")
+            {:error, reason} ->
+              Logger.error("Failed to send disconnect check: #{inspect(reason)}")
+          end
+      end
+    end)
+
+    # Type 5 = DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE - ACK an interaction and edit a response later, the user sees a loading state
+    {:reply, %{type: 5}}
   end
 end

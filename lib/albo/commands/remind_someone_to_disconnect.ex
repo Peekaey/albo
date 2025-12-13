@@ -1,6 +1,8 @@
 defmodule Albo.Commands.RemindUserToDisconnect do
   @behaviour Albo.Command
 
+  require Logger
+
   @impl true
   def name, do: "remind_someone_to_disconnect"
 
@@ -36,24 +38,33 @@ defmodule Albo.Commands.RemindUserToDisconnect do
         _ -> nil
       end)
 
-    content = "<@#{user_id}> — The right to disconnect is now law. Because if you're not being paid 24 hours a day, you shouldn't be on call 24 hours a day"
+      # Spawn task to get video data before responding to avoid timeouts
+      Task.start(fn ->
+        Process.sleep(100)
 
-    file_to_send = Albo.Utils.Helpers.get_right_to_disconnect_video()
+        content = "<@#{user_id}> — The right to disconnect is now law. Because if you're not being paid 24 hours a day, you shouldn't be on call 24 hours a day"
 
-    response = %{
-      type: 4,
-      data: %{
-        content: content,
-        files: [
-          %{
-            name: file_to_send.name,
-            body: file_to_send.body
-          }
-        ]
-      }
-    }
+        token = Map.get(interaction, "token", Map.get(interaction, :token))
 
-  {:reply, response}
+        case Albo.Utils.Helpers.get_right_to_disconnect_video() do
+          nil ->
+            Logger.error("Failed to get right to disconnect video")
+            case Nostrum.Api.Interaction.create_followup_message(token, %{content: "#{content}\n\n_(Video unavailable)_"}) do
+              {:ok, _} -> Logger.info("Sent error message to user #{user_id}")
+              {:error, reason} ->
+                Logger.error("Failed to send error message: #{inspect(reason)}")
+            end
 
+          file ->
+            case Nostrum.Api.Interaction.create_followup_message(token, %{content: content, files: [file]}) do
+              {:ok, _} -> Logger.info("Reminder sent to user #{user_id}")
+              {:error, reason} ->
+                Logger.error("Failed to send reminder message: #{inspect(reason)}")
+            end
+        end
+      end)
+
+    # Type 5 = DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE - ACK an interaction and edit a response later, the user sees a loading state
+    {:reply, %{type: 5}}
   end
 end
