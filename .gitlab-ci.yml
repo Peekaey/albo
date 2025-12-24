@@ -17,48 +17,14 @@ variables:
 docker-build:amd64:
   extends: .docker-build-base
   script:
-    # Set up QEMU (in case needed)
     - docker build --platform linux/amd64 --pull -t "$DOCKER_IMAGE_NAME-amd64" .
     - docker push "$DOCKER_IMAGE_NAME-amd64"
-
-# ARM64 build via emulation
-docker-build:arm64:
-  extends: .docker-build-base
-  script:
-    # Set up QEMU for ARM emulation
-    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    - docker build --platform linux/arm64 --pull -t "$DOCKER_IMAGE_NAME-arm64" .
-    - docker push "$DOCKER_IMAGE_NAME-arm64"
-
-# Combine into multi-arch manifest
-docker-manifest:
-  image: docker:cli
-  stage: build
-  services:
-    - docker:dind
-  needs:
-    - docker-build:amd64
-    - docker-build:arm64
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    # Create multi-arch manifest for branch tag
-    - |
-      docker manifest create "$DOCKER_IMAGE_NAME" \
-        --amend "$DOCKER_IMAGE_NAME-amd64" \
-        --amend "$DOCKER_IMAGE_NAME-arm64"
-    - docker manifest push "$DOCKER_IMAGE_NAME"
-    # Create latest tag for default branch
+    # Tag and push latest for main branch
     - |
       if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-        docker manifest create "$CI_REGISTRY_IMAGE:latest" \
-          --amend "$DOCKER_IMAGE_NAME-amd64" \
-          --amend "$DOCKER_IMAGE_NAME-arm64"
-        docker manifest push "$CI_REGISTRY_IMAGE:latest"
+        docker tag "$DOCKER_IMAGE_NAME" "$CI_REGISTRY_IMAGE:latest"
+        docker push "$CI_REGISTRY_IMAGE:latest"
       fi
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      exists:
-        - Dockerfile
+
   tags:
     - builds
