@@ -1,43 +1,22 @@
 variables:
   DOCKER_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  DOCKER_BUILDKIT: 1
 
 docker-build:amd64:
   stage: build
-  image: moby/buildkit:rootless
+  image: docker:cli
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    # Start buildkitd in rootless mode
-    - |
-      buildkitd --oci-worker-no-process-sandbox &
-      BUILDKIT_PID=$!
-      sleep 5
-    
-    # Login to registry
-    - |
-      mkdir -p ~/.docker
-      echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > ~/.docker/config.json
-    
-    # Build and push
-    - |
-      buildctl build \
-        --frontend dockerfile.v0 \
-        --local context=. \
-        --local dockerfile=. \
-        --output type=image,name="${DOCKER_IMAGE_NAME}",push=true \
-        --export-cache type=inline \
-        --import-cache type=registry,ref="${DOCKER_IMAGE_NAME}"
-    
-    # Tag as latest for main branch
+    - docker build --platform linux/amd64 --pull -t "$DOCKER_IMAGE_NAME" .
+    - docker push "$DOCKER_IMAGE_NAME"
     - |
       if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-        buildctl build \
-          --frontend dockerfile.v0 \
-          --local context=. \
-          --local dockerfile=. \
-          --output type=image,name="${CI_REGISTRY_IMAGE}:latest",push=true
+        docker tag "$DOCKER_IMAGE_NAME" "$CI_REGISTRY_IMAGE:latest"
+        docker push "$CI_REGISTRY_IMAGE:latest"
       fi
-    
-    # Cleanup
-    - kill $BUILDKIT_PID || true
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       exists:
