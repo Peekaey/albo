@@ -8,6 +8,11 @@ docker-build:amd64:
   variables:
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
+    # Debug: Check what we can see
+    - echo "Checking Docker socket..."
+    - ls -la /var/run/ || echo "No /var/run/"
+    - ls -la /var/run/docker.sock || echo "No docker.sock"
+    - mount | grep docker || echo "No docker mounts"
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - docker build --platform linux/amd64 --pull -t "$DOCKER_IMAGE_NAME" .
