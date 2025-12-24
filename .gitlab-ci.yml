@@ -55,7 +55,7 @@ docker-manifest:
           --amend "$DOCKER_IMAGE_NAME-amd64" \
           --amend "$DOCKER_IMAGE_NAME-arm64"
         docker manifest push "$CI_REGISTRY_IMAGE:latest"
-      fi=
+      fi
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       exists:
