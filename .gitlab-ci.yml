@@ -1,49 +1,62 @@
-# This file is a template, and might need editing before it works on your project.
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/development/cicd/templates/
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Docker.gitlab-ci.yml
+variables:
+  DOCKER_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
 
-# Build a Docker image with CI/CD and push to the GitLab registry.
-# Docker-in-Docker documentation: https://docs.gitlab.com/ci/docker/using_docker_build/
-#
-# This template uses one generic job with conditional builds
-# for the default branch and all other (MR) branches.
-
-docker-build:
-  # Use the official docker image.
+.docker-build-base:
   image: docker:cli
   stage: build
   services:
     - docker:dind
-  variables:
-    DOCKER_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    # Set up buildx for multi-architecture builds
-    - docker buildx create --use --name multiarch-builder || true
-    - docker buildx inspect --bootstrap
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      exists:
+        - Dockerfile
+
+# Native amd64 build
+docker-build:amd64:
+  extends: .docker-build-base
   script:
-    # Build and push multi-architecture image
+    # Set up QEMU (in case needed)
+    - docker build --platform linux/amd64 --pull -t "$DOCKER_IMAGE_NAME-amd64" .
+    - docker push "$DOCKER_IMAGE_NAME-amd64"
+
+# ARM64 build via emulation
+docker-build:arm64:
+  extends: .docker-build-base
+  script:
+    # Set up QEMU for ARM emulation
+    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - docker build --platform linux/arm64 --pull -t "$DOCKER_IMAGE_NAME-arm64" .
+    - docker push "$DOCKER_IMAGE_NAME-arm64"
+
+# Combine into multi-arch manifest
+docker-manifest:
+  image: docker:cli
+  stage: build
+  services:
+    - docker:dind
+  needs:
+    - docker-build:amd64
+    - docker-build:arm64
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    # Create multi-arch manifest for branch tag
     - |
-      docker buildx build \
-        --platform linux/amd64,linux/arm64 \
-        --pull \
-        --push \
-        -t "$DOCKER_IMAGE_NAME" \
-        .
-    # Tag and push latest for default branch
+      docker manifest create "$DOCKER_IMAGE_NAME" \
+        --amend "$DOCKER_IMAGE_NAME-amd64" \
+        --amend "$DOCKER_IMAGE_NAME-arm64"
+    - docker manifest push "$DOCKER_IMAGE_NAME"
+    # Create latest tag for default branch
     - |
       if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-        docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --pull \
-          --push \
-          -t "$CI_REGISTRY_IMAGE:latest" \
-          .
+        docker manifest create "$CI_REGISTRY_IMAGE:latest" \
+          --amend "$DOCKER_IMAGE_NAME-amd64" \
+          --amend "$DOCKER_IMAGE_NAME-arm64"
+        docker manifest push "$CI_REGISTRY_IMAGE:latest"
       fi
-  # Run this job in a branch where a Dockerfile exists && is main branch
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"'
-    - exists:
+    - if: $CI_COMMIT_BRANCH == "main"
+      exists:
         - Dockerfile
