@@ -4,10 +4,12 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: "tcp://docker:2375"
   FF_NETWORK_PER_BUILD: "true"
+  DOCKER_DRIVER: overlay2
+
 
 docker-build:amd64:
   stage: build
-  image: docker:cli
+  image: docker:latest
   services:
     - $DOCKER_DIND
   variables:
