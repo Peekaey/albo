@@ -19,7 +19,9 @@ COPY lib ./lib
 COPY assets ./assets
 
 # Create a release candidate
-RUN mix release
+RUN mix deps.compile && \
+    mix compile && \
+    mix release
 
 # Minimal runtime
 FROM alpine:3.21.0
