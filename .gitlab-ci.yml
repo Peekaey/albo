@@ -45,5 +45,5 @@ docker-build:
   # Run this job in a branch where a Dockerfile exists && is main branch
   rules:
     - if: $CI_COMMIT_BRANCH == "main"'
-      exists:
+    - exists:
         - Dockerfile
