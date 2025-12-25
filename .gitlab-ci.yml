@@ -24,7 +24,7 @@ docker-build:
 
   # Pick up your specific self-hosted runner
   tags:
-    - self-hosted-docker  # <--- CHANGE THIS to match your runner's tag
+    - builds
 
   before_script:
     # Login to the GitLab Container Registry using predefined CI variables
