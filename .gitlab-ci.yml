@@ -1,42 +1,30 @@
 stages:
   - build
 
-variables:
-  # Use the overlay driver for better performance
-  DOCKER_DRIVER: overlay2
-  # Disable TLS for DinD (optional, but common for simple self-hosted setups)
-  DOCKER_TLS_CERTDIR: ""
-
-docker-build:
-  # Use the official Docker image as the base image
+build-docker:
   image: docker:latest
   stage: build
   
-  # This service is required to run Docker commands inside the CI container
-  services:
-    - name: docker:dind
-      # explicit alias to ensure linking works
-      alias: docker
+  # -------------------------------------------------------------------------
+  # KEY CHANGES:
+  # 1. Removed 'services: - docker:dind' (We use the host's Docker instead)
+  # 2. Removed 'DOCKER_TLS_CERTDIR' (Not needed for socket connection)
+  # -------------------------------------------------------------------------
 
-  # Only run this job when code is pushed to the 'main' branch
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+  variables:
+    # Explicitly tell the docker client to use the mounted socket
+    DOCKER_HOST: unix:///var/run/docker.sock
 
-  # Pick up your specific self-hosted runner
   tags:
-    - builds
+    - self-hosted-docker  # Ensure this matches your runner tag
 
   before_script:
-    # Login to the GitLab Container Registry using predefined CI variables
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
   script:
-    # 1. Build the image
-    # We tag it with the commit SHA for version history and 'latest' for convenience
     - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
-    
-    # 2. Push the specific version
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-    
-    # 3. Push the 'latest' tag
     - docker push "$CI_REGISTRY_IMAGE:latest"
+
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
