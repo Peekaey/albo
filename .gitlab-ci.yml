@@ -1,37 +1,42 @@
+stages:
+  - build
+
 variables:
-  DOCKER_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-  DOCKER_DIND: "docker:20.10.16-dind"                                                          
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: "tcp://docker:2375"
-  FF_NETWORK_PER_BUILD: "true"
+  # Use the overlay driver for better performance
   DOCKER_DRIVER: overlay2
+  # Disable TLS for DinD (optional, but common for simple self-hosted setups)
+  DOCKER_TLS_CERTDIR: ""
 
-
-docker-build:amd64:
-  stage: build
+docker-build:
+  # Use the official Docker image as the base image
   image: docker:latest
+  stage: build
+  
+  # This service is required to run Docker commands inside the CI container
   services:
-    - $DOCKER_DIND
-  variables:
-    DOCKER_HOST: unix:///var/run/docker.sock
-  before_script:
-    # Debug: Check what we can see
-    - echo "Checking Docker socket..."
-    - ls -la /var/run/ || echo "No /var/run/"
-    - ls -la /var/run/docker.sock || echo "No docker.sock"
-    - mount | grep docker || echo "No docker mounts"
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - docker build --platform linux/amd64 --pull -t "$DOCKER_IMAGE_NAME" .
-    - docker push "$DOCKER_IMAGE_NAME"
-    - |
-      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-        docker tag "$DOCKER_IMAGE_NAME" "$CI_REGISTRY_IMAGE:latest"
-        docker push "$CI_REGISTRY_IMAGE:latest"
-      fi
+    - name: docker:dind
+      # explicit alias to ensure linking works
+      alias: docker
+
+  # Only run this job when code is pushed to the 'main' branch
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-      exists:
-        - Dockerfile
+
+  # Pick up your specific self-hosted runner
   tags:
-    - builds
+    - self-hosted-docker  # <--- CHANGE THIS to match your runner's tag
+
+  before_script:
+    # Login to the GitLab Container Registry using predefined CI variables
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+  script:
+    # 1. Build the image
+    # We tag it with the commit SHA for version history and 'latest' for convenience
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
+    
+    # 2. Push the specific version
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    
+    # 3. Push the 'latest' tag
+    - docker push "$CI_REGISTRY_IMAGE:latest"
