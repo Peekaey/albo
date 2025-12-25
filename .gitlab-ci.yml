@@ -16,7 +16,7 @@ build-docker:
     DOCKER_HOST: unix:///var/run/docker.sock
 
   tags:
-    - self-hosted-docker  # Ensure this matches your runner tag
+    - builds  # Ensure this matches your runner tag
 
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
